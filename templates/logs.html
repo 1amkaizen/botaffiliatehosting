@@ -412,15 +412,86 @@
         </div>
 
         <div class="section">
-            <h2>⚙️ Informasi Teknis</h2>
-            <div class="webhook-info">
-                <p><strong>🔗 Webhook Setup:</strong></p>
-                <p>1. URL Webhook: <code>https://your-repl-name.your-username.repl.co/webhook</code></p>
-                <p>2. Health Check: <code>/health</code></p>
-                <p>3. API Stats: <code>/api/stats</code></p>
-                <p>4. Test Endpoint: <code>/test</code></p>
-                <p><strong>📊 Database:</strong> SQLite - bot_logs.db</p>
+            <h2>⚙️ Setup Bot Telegram - Panduan Lengkap</h2>
+            
+            <!-- Bot Token Setup -->
+            <div class="webhook-info" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #2d3436;">🤖 1. Setup BOT_TOKEN</h3>
+                <p><strong>Langkah-langkah:</strong></p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Buka Telegram dan cari <code>@BotFather</code></li>
+                    <li>Ketik <code>/newbot</code> untuk membuat bot baru</li>
+                    <li>Berikan nama untuk bot Anda (contoh: "My Hosting Bot")</li>
+                    <li>Berikan username untuk bot (contoh: "myhostingbot")</li>
+                    <li>Copy token yang diberikan BotFather</li>
+                    <li>Di Replit: Buka tab <strong>"Secrets"</strong> → Klik <strong>"+ New Secret"</strong></li>
+                    <li>Key: <code>BOT_TOKEN</code> | Value: <code>paste token dari BotFather</code></li>
+                </ol>
+                <p style="background: rgba(0,0,0,0.1); padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <strong>⚠️ Penting:</strong> Jangan share token bot ke siapapun!
+                </p>
+            </div>
+
+            <!-- Webhook URL Setup -->
+            <div class="webhook-info" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #2d3436;">🔗 2. Setup WEBHOOK_URL</h3>
+                <p><strong>Untuk Replit (Recommended):</strong></p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Pastikan bot server sudah running (klik tombol <strong>"Run"</strong>)</li>
+                    <li>Copy URL repl Anda: <code>https://[repl-name].[username].repl.co</code></li>
+                    <li>Tambahkan <code>/webhook</code> di akhir URL</li>
+                    <li>Di tab <strong>"Secrets"</strong> → <strong>"+ New Secret"</strong></li>
+                    <li>Key: <code>WEBHOOK_URL</code> | Value: <code>https://[repl-name].[username].repl.co/webhook</code></li>
+                </ol>
+                
+                <p><strong>Contoh URL Webhook untuk platform lain:</strong></p>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li><strong>Vercel:</strong> <code>https://your-project.vercel.app/webhook</code></li>
+                    <li><strong>Railway:</strong> <code>https://your-app.railway.app/webhook</code></li>
+                    <li><strong>Render:</strong> <code>https://your-app.onrender.com/webhook</code></li>
+                    <li><strong>Heroku:</strong> <code>https://your-app.herokuapp.com/webhook</code></li>
+                </ul>
+            </div>
+
+            <!-- Setup Webhook -->
+            <div class="webhook-info" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 15px; color: #2d3436;">🚀 3. Aktivasi Webhook</h3>
+                <p><strong>Setelah BOT_TOKEN dan WEBHOOK_URL sudah diset:</strong></p>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Buka tab <strong>"Console"</strong> di Replit</li>
+                    <li>Ketik perintah: <code>python webhook_setup.py</code></li>
+                    <li>Tunggu sampai muncul pesan <strong>"✅ Webhook berhasil diset!"</strong></li>
+                    <li>Test bot di Telegram dengan mengirim <code>/start</code></li>
+                </ol>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="webhook-info" style="background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%); color: white;">
+                <h3 style="margin-bottom: 15px;">🛠️ Troubleshooting</h3>
+                <p><strong>Bot tidak merespon?</strong></p>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li>✅ Pastikan repl sedang running (lampu hijau di tab)</li>
+                    <li>✅ Cek BOT_TOKEN di Secrets sudah benar</li>
+                    <li>✅ Cek WEBHOOK_URL sudah sesuai format</li>
+                    <li>✅ Jalankan ulang webhook_setup.py</li>
+                    <li>✅ Test endpoint: <code>[your-repl-url]/health</code></li>
+                </ul>
+            </div>
+
+            <!-- Technical Info -->
+            <div class="webhook-info" style="background: #f8f9fa; color: #2d3436; border: 1px solid #dee2e6;">
+                <h3 style="margin-bottom: 15px;">📊 Informasi Teknis</h3>
+                <p><strong>🔗 Endpoints tersedia:</strong></p>
+                <ul style="margin-left: 20px; line-height: 1.6;">
+                    <li><code>/</code> - Dashboard analytics (halaman ini)</li>
+                    <li><code>/webhook</code> - Endpoint untuk Telegram webhook</li>
+                    <li><code>/health</code> - Health check status server</li>
+                    <li><code>/test</code> - Test konfigurasi bot</li>
+                    <li><code>/api/stats</code> - API statistik bot (JSON)</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>📊 Database:</strong> SQLite (bot_logs.db)</p>
                 <p><strong>🚀 Server:</strong> Flask Development Server pada port 5000</p>
+                <p><strong>🔄 Auto-refresh:</strong> Dashboard refresh otomatis setiap 30 detik</p>
             </div>
         </div>
     </div>
