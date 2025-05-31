@@ -317,6 +317,8 @@ def webhook():
     try:
         # Get the update from Telegram
         update_data = request.get_json()
+        print(f"Received webhook data: {update_data}")
+        
         if update_data:
             update = Update.de_json(update_data, telegram_app.bot)
             
@@ -329,7 +331,18 @@ def webhook():
         return jsonify({"status": "ok"})
     except Exception as e:
         print(f"Error processing webhook: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "bot_token_configured": bool(TOKEN),
+        "database_accessible": os.path.exists('bot_logs.db')
+    })
 
 @app.route('/')
 def logs_dashboard():
@@ -397,13 +410,32 @@ def api_stats():
         "daily_stats": [{"date": row[2], "interactions": row[3]} for row in daily_stats]
     })
 
+@app.route('/test')
+def test_bot():
+    """Test bot functionality"""
+    return jsonify({
+        "message": "Bot server is running!",
+        "endpoints": {
+            "dashboard": "/",
+            "webhook": "/webhook",
+            "health": "/health",
+            "stats_api": "/api/stats"
+        },
+        "bot_info": {
+            "token_configured": bool(TOKEN),
+            "database_exists": os.path.exists('bot_logs.db')
+        }
+    })
+
 if __name__ == "__main__":
     # Initialize database
     init_db()
     
     print("Bot webhook server starting...")
-    print("Access logs dashboard at: http://localhost:5000")
-    print("Webhook endpoint: http://localhost:5000/webhook")
+    print("Access logs dashboard at: http://0.0.0.0:5000")
+    print("Webhook endpoint: http://0.0.0.0:5000/webhook")
+    print("Health check: http://0.0.0.0:5000/health")
+    print("Test endpoint: http://0.0.0.0:5000/test")
     
     # Run Flask app
     app.run(host="0.0.0.0", port=5000, debug=True)
