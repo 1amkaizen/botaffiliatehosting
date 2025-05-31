@@ -431,11 +431,23 @@ if __name__ == "__main__":
     # Initialize database
     init_db()
     
-    print("Bot webhook server starting...")
-    print("Access logs dashboard at: http://0.0.0.0:5000")
-    print("Webhook endpoint: http://0.0.0.0:5000/webhook")
-    print("Health check: http://0.0.0.0:5000/health")
-    print("Test endpoint: http://0.0.0.0:5000/test")
+    # Get port from environment (for deployment flexibility)
+    port = int(os.getenv("PORT", 5000))
+    
+    print(f"🤖 Bot webhook server starting on port {port}...")
+    print(f"📊 Access logs dashboard at: http://0.0.0.0:{port}")
+    print(f"🔗 Webhook endpoint: http://0.0.0.0:{port}/webhook")
+    print(f"💚 Health check: http://0.0.0.0:{port}/health")
+    print(f"🧪 Test endpoint: http://0.0.0.0:{port}/test")
+    
+    # Check if required environment variables are set
+    webhook_url = os.getenv("WEBHOOK_URL")
+    if webhook_url:
+        print(f"✅ Webhook URL configured: {webhook_url}")
+    else:
+        print("⚠️  WEBHOOK_URL not set - use webhook_setup.py to configure")
     
     # Run Flask app
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # Use debug=False for production deployment
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    app.run(host="0.0.0.0", port=port, debug=debug_mode)
