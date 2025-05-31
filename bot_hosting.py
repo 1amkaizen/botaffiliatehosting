@@ -1,17 +1,9 @@
-
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from data_hosting import HOSTING_OPTIONS
-import json
-import os
-from dotenv import load_dotenv
-from flask import Flask, request
 
 # Global dict to track user state
 user_state = {}
-
-# Flask app for webhook
-app = Flask(__name__)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = ReplyKeyboardMarkup([["Web Hosting", "VPS Hosting", "Cloud Hosting"]], one_time_keyboard=True)
@@ -77,56 +69,22 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Ketik /start untuk memulai pemilihan paket atau /help untuk bantuan."
         )
 
-# Initialize the bot application
-load_dotenv()
-TOKEN = os.getenv("BOT_TOKEN")
-if not TOKEN:
-    raise ValueError("BOT_TOKEN tidak ditemukan. Pastikan sudah diset di .env atau environment variables.")
-
-# Create bot application
-bot_app = ApplicationBuilder().token(TOKEN).build()
-bot_app.add_handler(CommandHandler("start", start))
-bot_app.add_handler(CommandHandler("help", help_command))
-bot_app.add_handler(CommandHandler("paket", paket_command))
-bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
-
-@app.route('/')
-def health_check():
-    return "Bot is running!"
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """Handle incoming webhook updates from Telegram"""
-    try:
-        # Get the JSON data from the request
-        json_data = request.get_json()
-        
-        if json_data:
-            # Create an Update object from the JSON data
-            update = Update.de_json(json_data, bot_app.bot)
-            
-            # Process the update
-            bot_app.update_queue.put_nowait(update)
-        
-        return "OK", 200
-    except Exception as e:
-        print(f"Error processing webhook: {e}")
-        return "Error", 500
-
 if __name__ == "__main__":
-    import asyncio
-    
-    # Start the bot's update processing in background
-    async def start_bot():
-        await bot_app.initialize()
-        await bot_app.start()
-        # Start processing updates
-        await bot_app.updater.start_polling()
-    
-    # Run the bot initialization in background
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_bot())
-    
-    print("Bot webhook server is running...")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    import os
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    TOKEN = os.getenv("BOT_TOKEN")
+    if not TOKEN:
+        raise ValueError("BOT_TOKEN tidak ditemukan. Pastikan sudah diset di .env atau environment variables.")
+
+
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("paket", paket_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
+
+    print("Bot is running...")
+    app.run_polling()
+
