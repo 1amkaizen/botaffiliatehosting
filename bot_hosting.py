@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 user_state = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if we have valid update
+    if not update.effective_chat or not update.message:
+        return
+        
     # Check if this is a group/channel
     chat_type = update.effective_chat.type
     
@@ -39,6 +43,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state[update.effective_user.id] = {"step": "jenis"}
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+        
     help_text = (
         "🤖 *Panduan Bot Hosting*\n\n"
         "/start - Memulai pemilihan paket hosting\n"
@@ -50,6 +57,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_markdown(help_text)
 
 async def paket_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.effective_chat or not update.message:
+        return
+        
     # Sama seperti start tapi lebih singkat
     chat_type = update.effective_chat.type
     
@@ -95,6 +105,9 @@ async def cloudhosting_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def show_hosting_packages(update: Update, hosting_type: str):
     """Display all packages for a hosting type"""
+    if not update.message:
+        return
+        
     if hosting_type not in HOSTING_OPTIONS:
         await update.message.reply_text("Jenis hosting tidak ditemukan.")
         return
@@ -134,8 +147,18 @@ async def show_hosting_packages(update: Update, hosting_type: str):
         await update.message.reply_text(response_text, disable_web_page_preview=True)
 
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Check if we have valid user and message
+    if not update.effective_user or not update.message:
+        print("Received update without user or message, skipping...")
+        return
+    
     user_id = update.effective_user.id
     text = update.message.text
+    
+    # Check if text exists
+    if not text:
+        return
+        
     state = user_state.get(user_id, {})
     chat_type = update.effective_chat.type
 
