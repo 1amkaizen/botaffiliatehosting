@@ -68,15 +68,30 @@ async def paket_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def webhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show Web Hosting packages"""
-    await show_hosting_packages(update, "Web Hosting")
+    print(f"Webhosting command triggered in chat: {update.effective_chat.type}")
+    try:
+        await show_hosting_packages(update, "Web Hosting")
+    except Exception as e:
+        print(f"Error in webhosting command: {e}")
+        await update.message.reply_text("Maaf, terjadi kesalahan. Silakan coba lagi.")
 
 async def vpshosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show VPS Hosting packages"""
-    await show_hosting_packages(update, "VPS Hosting")
+    print(f"VPS hosting command triggered in chat: {update.effective_chat.type}")
+    try:
+        await show_hosting_packages(update, "VPS Hosting")
+    except Exception as e:
+        print(f"Error in vpshosting command: {e}")
+        await update.message.reply_text("Maaf, terjadi kesalahan. Silakan coba lagi.")
 
 async def cloudhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show Cloud Hosting packages"""
-    await show_hosting_packages(update, "Cloud Hosting")
+    print(f"Cloud hosting command triggered in chat: {update.effective_chat.type}")
+    try:
+        await show_hosting_packages(update, "Cloud Hosting")
+    except Exception as e:
+        print(f"Error in cloudhosting command: {e}")
+        await update.message.reply_text("Maaf, terjadi kesalahan. Silakan coba lagi.")
 
 async def show_hosting_packages(update: Update, hosting_type: str):
     """Display all packages for a hosting type"""
@@ -84,22 +99,39 @@ async def show_hosting_packages(update: Update, hosting_type: str):
         await update.message.reply_text("Jenis hosting tidak ditemukan.")
         return
     
-    response_text = f"📦 *{hosting_type} - Semua Paket*\n\n"
+    response_text = f"📦 {hosting_type} - Semua Paket\n\n"
     
     for duration, packages in HOSTING_OPTIONS[hosting_type].items():
-        response_text += f"🕒 *{duration.capitalize()}:*\n"
+        response_text += f"🕒 {duration.capitalize()}:\n"
         for i, paket in enumerate(packages, 1):
             fitur_text = ", ".join(paket['fitur'][:3])  # Show first 3 features
             if len(paket['fitur']) > 3:
                 fitur_text += f" + {len(paket['fitur']) - 3} lainnya"
             
             response_text += (
-                f"{i}. *{paket.get('nama', hosting_type)}* - {paket['harga']}\n"
+                f"{i}. {paket.get('nama', hosting_type)} - {paket['harga']}\n"
                 f"   {fitur_text}\n"
-                f"   [Beli Sekarang]({paket['link']})\n\n"
+                f"   🔗 {paket['link']}\n\n"
             )
     
-    await update.message.reply_markdown(response_text, disable_web_page_preview=True)
+    # Split long messages if needed
+    if len(response_text) > 4000:
+        # Send in chunks
+        for duration, packages in HOSTING_OPTIONS[hosting_type].items():
+            chunk_text = f"📦 {hosting_type} - {duration.capitalize()}\n\n"
+            for i, paket in enumerate(packages, 1):
+                fitur_text = ", ".join(paket['fitur'][:3])
+                if len(paket['fitur']) > 3:
+                    fitur_text += f" + {len(paket['fitur']) - 3} lainnya"
+                
+                chunk_text += (
+                    f"{i}. {paket.get('nama', hosting_type)} - {paket['harga']}\n"
+                    f"   {fitur_text}\n"
+                    f"   🔗 {paket['link']}\n\n"
+                )
+            await update.message.reply_text(chunk_text, disable_web_page_preview=True)
+    else:
+        await update.message.reply_text(response_text, disable_web_page_preview=True)
 
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
