@@ -9,13 +9,33 @@ from dotenv import load_dotenv
 user_state = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply_markup = ReplyKeyboardMarkup([["Web Hosting", "VPS Hosting", "Cloud Hosting"]], one_time_keyboard=True)
-    await update.message.reply_text(
-        "Halo! Selamat datang di layanan hosting kami.\n"
-        "Ketik /help untuk info bantuan.\n\n"
-        "Pilih jenis hosting yang ingin kamu beli:",
-        reply_markup=reply_markup
-    )
+    # Check if this is a group/channel
+    chat_type = update.effective_chat.type
+    
+    if chat_type in ['group', 'supergroup', 'channel']:
+        # In groups/channels, don't use custom keyboard
+        await update.message.reply_text(
+            "🤖 *Bot Hosting Services*\n\n"
+            "Halo! Selamat datang di layanan hosting kami.\n"
+            "Gunakan perintah berikut untuk berinteraksi:\n\n"
+            "• /start - Memulai pemilihan paket\n"
+            "• /webhosting - Lihat paket Web Hosting\n"
+            "• /vpshosting - Lihat paket VPS Hosting\n"
+            "• /cloudhosting - Lihat paket Cloud Hosting\n"
+            "• /help - Bantuan lengkap\n\n"
+            "Ketik salah satu perintah di atas untuk mulai!",
+            parse_mode='Markdown'
+        )
+    else:
+        # Private chat - use keyboard
+        reply_markup = ReplyKeyboardMarkup([["Web Hosting", "VPS Hosting", "Cloud Hosting"]], one_time_keyboard=True)
+        await update.message.reply_text(
+            "Halo! Selamat datang di layanan hosting kami.\n"
+            "Ketik /help untuk info bantuan.\n\n"
+            "Pilih jenis hosting yang ingin kamu beli:",
+            reply_markup=reply_markup
+        )
+    
     user_state[update.effective_user.id] = {"step": "jenis"}
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -31,14 +51,66 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def paket_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Sama seperti start tapi lebih singkat
-    reply_markup = ReplyKeyboardMarkup([["Web Hosting", "VPS Hosting", "Cloud Hosting"]], one_time_keyboard=True)
-    await update.message.reply_text("Silakan pilih jenis hosting:", reply_markup=reply_markup)
+    chat_type = update.effective_chat.type
+    
+    if chat_type in ['group', 'supergroup', 'channel']:
+        await update.message.reply_text(
+            "Gunakan salah satu perintah berikut:\n"
+            "• /webhosting - Web Hosting\n"
+            "• /vpshosting - VPS Hosting\n"
+            "• /cloudhosting - Cloud Hosting"
+        )
+    else:
+        reply_markup = ReplyKeyboardMarkup([["Web Hosting", "VPS Hosting", "Cloud Hosting"]], one_time_keyboard=True)
+        await update.message.reply_text("Silakan pilih jenis hosting:", reply_markup=reply_markup)
+    
     user_state[update.effective_user.id] = {"step": "jenis"}
+
+async def webhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show Web Hosting packages"""
+    await show_hosting_packages(update, "Web Hosting")
+
+async def vpshosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show VPS Hosting packages"""
+    await show_hosting_packages(update, "VPS Hosting")
+
+async def cloudhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show Cloud Hosting packages"""
+    await show_hosting_packages(update, "Cloud Hosting")
+
+async def show_hosting_packages(update: Update, hosting_type: str):
+    """Display all packages for a hosting type"""
+    if hosting_type not in HOSTING_OPTIONS:
+        await update.message.reply_text("Jenis hosting tidak ditemukan.")
+        return
+    
+    response_text = f"📦 *{hosting_type} - Semua Paket*\n\n"
+    
+    for duration, packages in HOSTING_OPTIONS[hosting_type].items():
+        response_text += f"🕒 *{duration.capitalize()}:*\n"
+        for i, paket in enumerate(packages, 1):
+            fitur_text = ", ".join(paket['fitur'][:3])  # Show first 3 features
+            if len(paket['fitur']) > 3:
+                fitur_text += f" + {len(paket['fitur']) - 3} lainnya"
+            
+            response_text += (
+                f"{i}. *{paket.get('nama', hosting_type)}* - {paket['harga']}\n"
+                f"   {fitur_text}\n"
+                f"   [Beli Sekarang]({paket['link']})\n\n"
+            )
+    
+    await update.message.reply_markdown(response_text, disable_web_page_preview=True)
 
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     text = update.message.text
     state = user_state.get(user_id, {})
+    chat_type = update.effective_chat.type
+
+    # In groups/channels, only respond to private chat workflow
+    if chat_type in ['group', 'supergroup', 'channel']:
+        # Don't respond to random text in groups, only commands
+        return
 
     if state.get("step") == "jenis":
         if text in HOSTING_OPTIONS:
@@ -85,6 +157,9 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("paket", paket_command))
+    app.add_handler(CommandHandler("webhosting", webhosting_command))
+    app.add_handler(CommandHandler("vpshosting", vpshosting_command))
+    app.add_handler(CommandHandler("cloudhosting", cloudhosting_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
 
     print("Bot is running...")
