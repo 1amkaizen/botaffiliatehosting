@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bot Hosting - Usage Logs</title>
+    <title>Bot Hosting - Usage Analytics Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -59,6 +60,11 @@
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
         }
 
         .stat-card h3 {
@@ -83,6 +89,15 @@
             color: #333;
             margin-bottom: 20px;
             font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
         }
 
         table {
@@ -95,7 +110,7 @@
         }
 
         th, td {
-            padding: 15px;
+            padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
@@ -104,6 +119,7 @@
             background: #333;
             color: white;
             font-weight: 600;
+            font-size: 0.9em;
         }
 
         tr:hover {
@@ -114,9 +130,52 @@
             background: #e74c3c;
             color: white;
             padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
+            border-radius: 15px;
+            font-size: 0.8em;
             font-weight: 500;
+        }
+
+        .action-tag {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .user-card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .user-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .user-stats {
+            text-align: right;
+            color: #4facfe;
+            font-weight: bold;
         }
 
         .log-entry {
@@ -131,15 +190,27 @@
         .log-meta {
             font-size: 0.9em;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .log-text {
             color: #333;
             font-weight: 500;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
         }
 
         .logs-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .users-container {
             max-height: 500px;
             overflow-y: auto;
         }
@@ -158,99 +229,236 @@
             border-radius: 4px;
             font-family: 'Courier New', monospace;
         }
+
+        .refresh-info {
+            background: #dff0d8;
+            color: #3c763d;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .activity-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #27ae60;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 Bot Hosting Dashboard</h1>
-            <p>Monitor bot usage and user interactions</p>
+            <h1>🤖 Bot Hosting Analytics Dashboard</h1>
+            <p>Monitor pengguna dan aktivitas bot secara real-time</p>
+        </div>
+
+        <div class="refresh-info">
+            <span class="activity-indicator"></span>
+            Dashboard ini refresh otomatis setiap 30 detik untuk data terbaru
         </div>
 
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>{{ stats[0] }}</h3>
-                <p>Unique Users</p>
+                <h3>{{ stats[0] if stats else 0 }}</h3>
+                <p>Total Pengguna</p>
             </div>
             <div class="stat-card">
-                <h3>{{ stats[1] }}</h3>
-                <p>Total Interactions</p>
+                <h3>{{ stats[1] if stats else 0 }}</h3>
+                <p>Total Interaksi</p>
             </div>
             <div class="stat-card">
                 <h3>{{ command_stats|length }}</h3>
-                <p>Commands Used</p>
+                <p>Jenis Command</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ (stats[1] / stats[0])|round(1) if stats and stats[0] > 0 else 0 }}</h3>
+                <p>Rata-rata per User</p>
+            </div>
+        </div>
+
+        <div class="two-column">
+            <div class="section">
+                <h2>👥 Daftar Pengguna Bot</h2>
+                <div class="users-container">
+                    {% set user_dict = {} %}
+                    {% for log in logs %}
+                        {% if log[1] %}
+                            {% if log[1] not in user_dict %}
+                                {% set _ = user_dict.update({log[1]: {'name': log[3] or 'Unknown', 'username': log[2], 'last_seen': log[0], 'interactions': 1, 'last_action': log[8] or log[7] or 'No action'}}) %}
+                            {% else %}
+                                {% set _ = user_dict[log[1]].update({'interactions': user_dict[log[1]]['interactions'] + 1}) %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% for user_id, user_data in user_dict.items() %}
+                    <div class="user-card">
+                        <div class="user-info">
+                            <div class="user-name">
+                                {{ user_data['name'] }}
+                                {% if user_data['username'] %}
+                                    (@{{ user_data['username'] }})
+                                {% endif %}
+                            </div>
+                            <div class="user-details">
+                                🆔 ID: {{ user_id }} | 🕒 Terakhir: {{ user_data['last_seen'][:16] }}
+                                <br>
+                                📱 Aksi terakhir: {{ user_data['last_action'] }}
+                            </div>
+                        </div>
+                        <div class="user-stats">
+                            {{ user_data['interactions'] }} interaksi
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="no-data">
+                        Belum ada pengguna yang menggunakan bot
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Statistik Command</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Command</th>
+                            <th>Jumlah</th>
+                            <th>Persentase</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for command, count in command_stats %}
+                        <tr>
+                            <td>
+                                <span class="command-tag">
+                                    {{ command if command else 'Text Message' }}
+                                </span>
+                            </td>
+                            <td>{{ count }}</td>
+                            <td>{{ "%.1f"|format((count / stats[1]) * 100) if stats and stats[1] > 0 else 0 }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
         <div class="section">
-            <h2>📊 Command Usage Statistics</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Usage Count</th>
-                        <th>Percentage</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for command, count in command_stats %}
-                    <tr>
-                        <td><span class="command-tag">{{ command or 'N/A' }}</span></td>
-                        <td>{{ count }}</td>
-                        <td>{{ "%.1f"|format((count / stats[1]) * 100) }}%</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <h2>📝 Recent Bot Interactions</h2>
+            <h2>📝 Log Aktivitas Real-time</h2>
             <div class="logs-container">
-                {% for log in logs %}
+                {% for log in logs[:50] %}
                 <div class="log-entry">
                     <div class="log-meta">
-                        🕒 {{ log[0] }} | 👤 {{ log[5] or 'Unknown' }} ({{ log[2] or 'No username' }}) | 💬 {{ log[6] or 'Private' }}
+                        <span>🕒 {{ log[0][:19] }}</span>
+                        <span>👤 {{ log[3] or 'Unknown' }}{% if log[2] %} (@{{ log[2] }}){% endif %}</span>
+                        <span>🆔 {{ log[1] }}</span>
+                        <span>💬 {{ log[6] or 'Private Chat' }}</span>
                     </div>
                     <div class="log-text">
                         {% if log[7] %}
-                            <strong>Command:</strong> {{ log[7] }}
+                            <span class="command-tag">{{ log[7] }}</span>
                         {% endif %}
                         {% if log[8] %}
-                            <strong>Action:</strong> {{ log[8] }}
+                            <span class="action-tag">{{ log[8] }}</span>
                         {% endif %}
-                        {% if log[6] %}
-                            <strong>Message:</strong> {{ log[6] }}
+                        {% if log[6] and log[6] != log[7] %}
+                            <span style="color: #666;">💬 "{{ log[6][:50] }}{% if log[6]|length > 50 %}...{% endif %}"</span>
                         {% endif %}
                     </div>
                 </div>
                 {% else %}
-                <p>No interactions yet. Start using the bot to see logs here!</p>
+                <div class="no-data">
+                    Belum ada aktivitas bot. Mulai gunakan bot untuk melihat log di sini!
+                </div>
                 {% endfor %}
             </div>
         </div>
 
         <div class="section">
-            <h2>ℹ️ How to Set Up Webhook</h2>
+            <h2>⚙️ Informasi Teknis</h2>
             <div class="webhook-info">
-                <p><strong>1.</strong> Get your Replit app URL (e.g., https://your-repl-name.your-username.repl.co)</p>
-                <p><strong>2.</strong> Set the webhook URL to: <code>https://your-repl-name.your-username.repl.co/webhook</code></p>
-                <p><strong>3.</strong> Use the Telegram Bot API or run the webhook setup script</p>
-                <p><strong>4.</strong> Make sure your BOT_TOKEN is set in environment variables</p>
-                <p><strong>5.</strong> Bot is currently running on: <code>http://0.0.0.0:5000</code></p>
+                <p><strong>🔗 Webhook Setup:</strong></p>
+                <p>1. URL Webhook: <code>https://your-repl-name.your-username.repl.co/webhook</code></p>
+                <p>2. Health Check: <code>/health</code></p>
+                <p>3. API Stats: <code>/api/stats</code></p>
+                <p>4. Test Endpoint: <code>/test</code></p>
+                <p><strong>📊 Database:</strong> SQLite - bot_logs.db</p>
+                <p><strong>🚀 Server:</strong> Flask Development Server pada port 5000</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Auto-refresh every 30 seconds
-        setTimeout(() => {
+        // Auto-refresh setiap 30 detik
+        let refreshTimer = setTimeout(() => {
             location.reload();
         }, 30000);
 
-        // Add some interactivity
+        // Tambahkan indikator refresh countdown
+        let countdown = 30;
+        const refreshInfo = document.querySelector('.refresh-info');
+        
+        setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                refreshInfo.innerHTML = `<span class="activity-indicator"></span>Dashboard akan refresh dalam ${countdown} detik`;
+            } else {
+                refreshInfo.innerHTML = `<span class="activity-indicator"></span>Refreshing...`;
+            }
+        }, 1000);
+
+        // Log ke console
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Bot Dashboard loaded successfully!');
+            console.log('Bot Analytics Dashboard loaded successfully!');
+            console.log(`Total users: {{ stats[0] if stats else 0 }}`);
+            console.log(`Total interactions: {{ stats[1] if stats else 0 }}`);
+        });
+
+        // Tambahkan smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
         });
     </script>
 </body>
