@@ -1,4 +1,3 @@
-
 import os
 import requests
 from dotenv import load_dotenv
@@ -25,3 +24,14 @@ print(f"Webhook setup response: {response.json()}")
 info_url = f"https://api.telegram.org/bot{TOKEN}/getWebhookInfo"
 info_response = requests.get(info_url)
 print(f"Webhook info: {info_response.json()}")
+```
+
+becomes:
+
+```python
+# This file is not needed for polling mode
+# If you want to use webhooks later, you can implement the webhook setup here
+```
+
+```
+</replit_final_file>
