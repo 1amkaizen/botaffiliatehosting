@@ -1,3 +1,4 @@
+
 import os
 import requests
 from dotenv import load_dotenv
@@ -5,33 +6,38 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Your Replit app URL + /webhook
 
 if not TOKEN:
     raise ValueError("BOT_TOKEN tidak ditemukan")
 
-if not WEBHOOK_URL:
-    raise ValueError("WEBHOOK_URL tidak ditemukan. Set ke https://your-repl-name.your-username.repl.co/webhook")
+# For Replit, the webhook URL will be your repl URL + /webhook
+# Example: https://your-repl-name.your-username.repl.co/webhook
+REPL_NAME = input("Enter your Repl name: ")
+USERNAME = input("Enter your Replit username: ")
+WEBHOOK_URL = f"https://{REPL_NAME}.{USERNAME}.repl.co/webhook"
+
+print(f"Setting webhook to: {WEBHOOK_URL}")
 
 # Set webhook
 url = f"https://api.telegram.org/bot{TOKEN}/setWebhook"
 data = {"url": WEBHOOK_URL}
 
 response = requests.post(url, data=data)
-print(f"Webhook setup response: {response.json()}")
+result = response.json()
+print(f"Webhook setup response: {result}")
+
+if result.get("ok"):
+    print("✅ Webhook set successfully!")
+else:
+    print(f"❌ Error setting webhook: {result.get('description')}")
 
 # Check webhook info
 info_url = f"https://api.telegram.org/bot{TOKEN}/getWebhookInfo"
 info_response = requests.get(info_url)
-print(f"Webhook info: {info_response.json()}")
-```
+webhook_info = info_response.json()
+print(f"Webhook info: {webhook_info}")
 
-becomes:
-
-```python
-# This file is not needed for polling mode
-# If you want to use webhooks later, you can implement the webhook setup here
-```
-
-```
-</replit_final_file>
+if webhook_info.get("result", {}).get("url"):
+    print(f"✅ Current webhook URL: {webhook_info['result']['url']}")
+else:
+    print("❌ No webhook is currently set")

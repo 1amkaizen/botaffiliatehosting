@@ -6,3 +6,15 @@ channel = "stable-24_05"
 
 [deployment]
 run = ["sh", "-c", "python bot_hosting.py"]
+
+[workflows]
+runButton = "Run Webhook Server"
+
+[[workflows.workflow]]
+name = "Run Webhook Server"
+author = 19984846
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python bot_hosting.py"

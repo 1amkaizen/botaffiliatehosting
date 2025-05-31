@@ -1,14 +1,77 @@
+
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from data_hosting import HOSTING_OPTIONS
 import json
 import os
 from dotenv import load_dotenv
+from flask import Flask, request, jsonify, render_template
+import asyncio
+from datetime import datetime
+import sqlite3
+from threading import Thread
+
+# Load environment variables
+load_dotenv()
 
 # Global dict to track user state
 user_state = {}
 
+# Flask app for webhook and logging interface
+app = Flask(__name__)
+
+# Database setup for logging
+def init_db():
+    conn = sqlite3.connect('bot_logs.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS bot_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            user_id INTEGER,
+            username TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            chat_type TEXT,
+            message_text TEXT,
+            command TEXT,
+            action TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def log_user_action(update: Update, action: str, command: str = None):
+    """Log user interactions to database"""
+    conn = sqlite3.connect('bot_logs.db')
+    cursor = conn.cursor()
+    
+    user = update.effective_user
+    chat = update.effective_chat
+    message = update.message
+    
+    cursor.execute('''
+        INSERT INTO bot_logs (timestamp, user_id, username, first_name, last_name, 
+                             chat_type, message_text, command, action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        datetime.now().isoformat(),
+        user.id if user else None,
+        user.username if user else None,
+        user.first_name if user else None,
+        user.last_name if user else None,
+        chat.type if chat else None,
+        message.text if message else None,
+        command,
+        action
+    ))
+    
+    conn.commit()
+    conn.close()
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    log_user_action(update, "start_command", "/start")
+    
     # Check if we have valid update
     if not update.effective_chat or not update.message:
         return
@@ -48,6 +111,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state[update.effective_user.id] = {"step": "jenis"}
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    log_user_action(update, "help_command", "/help")
+    
     if not update.message:
         return
         
@@ -66,6 +131,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_markdown(help_text)
 
 async def paket_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    log_user_action(update, "paket_command", "/paket")
+    
     if not update.effective_chat or not update.message or not update.effective_user:
         return
         
@@ -87,6 +154,8 @@ async def paket_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def webhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show Web Hosting packages"""
+    log_user_action(update, "webhosting_command", "/webhosting")
+    
     if not update.effective_chat or not update.message:
         return
         
@@ -99,6 +168,8 @@ async def webhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def vpshosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show VPS Hosting packages"""
+    log_user_action(update, "vpshosting_command", "/vpshosting")
+    
     if not update.effective_chat or not update.message:
         return
         
@@ -111,6 +182,8 @@ async def vpshosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def cloudhosting_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show Cloud Hosting packages"""
+    log_user_action(update, "cloudhosting_command", "/cloudhosting")
+    
     if not update.effective_chat or not update.message:
         return
         
@@ -123,6 +196,8 @@ async def cloudhosting_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 async def show_hosting_packages(update: Update, hosting_type: str):
     """Display all packages for a hosting type"""
+    log_user_action(update, f"viewed_{hosting_type.lower().replace(' ', '_')}_packages")
+    
     if not update.message:
         return
         
@@ -165,6 +240,8 @@ async def show_hosting_packages(update: Update, hosting_type: str):
         await update.message.reply_text(response_text, disable_web_page_preview=True)
 
 async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    log_user_action(update, "text_message")
+    
     # Check if we have valid user and message
     if not update.effective_user or not update.message:
         print("Received update without user or message, skipping...")
@@ -191,12 +268,14 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             durations = list(HOSTING_OPTIONS[text].keys())
             reply_markup = ReplyKeyboardMarkup([[d] for d in durations], one_time_keyboard=True)
             await update.message.reply_text("Pilih durasi paket:", reply_markup=reply_markup)
+            log_user_action(update, f"selected_hosting_type", text)
         else:
             await update.message.reply_text("Mohon pilih jenis hosting yang valid.")
 
     elif state.get("step") == "durasi":
         jenis = state.get("jenis")
         if jenis and text in HOSTING_OPTIONS[jenis]:
+            log_user_action(update, f"selected_duration", f"{jenis} - {text}")
             paket_list = HOSTING_OPTIONS[jenis][text]  # List paket
             for paket in paket_list:
                 fitur_text = "\n".join([f"• {f}" for f in paket['fitur']])
@@ -217,23 +296,114 @@ async def handle_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Ketik /start untuk memulai pemilihan paket atau /help untuk bantuan."
         )
 
+# Initialize Telegram bot
+TOKEN = os.getenv("BOT_TOKEN")
+if not TOKEN:
+    raise ValueError("BOT_TOKEN tidak ditemukan. Pastikan sudah diset di .env atau environment variables.")
+
+telegram_app = ApplicationBuilder().token(TOKEN).build()
+telegram_app.add_handler(CommandHandler("start", start))
+telegram_app.add_handler(CommandHandler("help", help_command))
+telegram_app.add_handler(CommandHandler("paket", paket_command))
+telegram_app.add_handler(CommandHandler("webhosting", webhosting_command))
+telegram_app.add_handler(CommandHandler("vpshosting", vpshosting_command))
+telegram_app.add_handler(CommandHandler("cloudhosting", cloudhosting_command))
+telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
+
+# Flask routes
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    """Handle incoming Telegram updates"""
+    try:
+        # Get the update from Telegram
+        update_data = request.get_json()
+        if update_data:
+            update = Update.de_json(update_data, telegram_app.bot)
+            
+            # Process the update asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(telegram_app.process_update(update))
+            loop.close()
+            
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        print(f"Error processing webhook: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/')
+def logs_dashboard():
+    """Display bot usage logs"""
+    conn = sqlite3.connect('bot_logs.db')
+    cursor = conn.cursor()
+    
+    # Get recent logs
+    cursor.execute('''
+        SELECT timestamp, user_id, username, first_name, last_name, 
+               chat_type, message_text, command, action
+        FROM bot_logs 
+        ORDER BY timestamp DESC 
+        LIMIT 100
+    ''')
+    logs = cursor.fetchall()
+    
+    # Get user statistics
+    cursor.execute('''
+        SELECT COUNT(DISTINCT user_id) as unique_users,
+               COUNT(*) as total_interactions
+        FROM bot_logs
+    ''')
+    stats = cursor.fetchone()
+    
+    # Get command usage statistics
+    cursor.execute('''
+        SELECT command, COUNT(*) as count
+        FROM bot_logs 
+        WHERE command IS NOT NULL
+        GROUP BY command
+        ORDER BY count DESC
+    ''')
+    command_stats = cursor.fetchall()
+    
+    conn.close()
+    
+    return render_template('logs.html', 
+                         logs=logs, 
+                         stats=stats, 
+                         command_stats=command_stats)
+
+@app.route('/api/stats')
+def api_stats():
+    """API endpoint for bot statistics"""
+    conn = sqlite3.connect('bot_logs.db')
+    cursor = conn.cursor()
+    
+    # Get statistics
+    cursor.execute('''
+        SELECT COUNT(DISTINCT user_id) as unique_users,
+               COUNT(*) as total_interactions,
+               DATE(timestamp) as date,
+               COUNT(*) as daily_interactions
+        FROM bot_logs
+        GROUP BY DATE(timestamp)
+        ORDER BY date DESC
+        LIMIT 30
+    ''')
+    daily_stats = cursor.fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        "daily_stats": [{"date": row[2], "interactions": row[3]} for row in daily_stats]
+    })
+
 if __name__ == "__main__":
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    TOKEN = os.getenv("BOT_TOKEN")
-    if not TOKEN:
-        raise ValueError("BOT_TOKEN tidak ditemukan. Pastikan sudah diset di .env atau environment variables.")
-
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("paket", paket_command))
-    app.add_handler(CommandHandler("webhosting", webhosting_command))
-    app.add_handler(CommandHandler("vpshosting", vpshosting_command))
-    app.add_handler(CommandHandler("cloudhosting", cloudhosting_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_response))
-
-    print("Bot is running...")
-    app.run_polling()
+    # Initialize database
+    init_db()
+    
+    print("Bot webhook server starting...")
+    print("Access logs dashboard at: http://localhost:5000")
+    print("Webhook endpoint: http://localhost:5000/webhook")
+    
+    # Run Flask app
+    app.run(host="0.0.0.0", port=5000, debug=True)
