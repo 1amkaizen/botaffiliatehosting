@@ -1,3 +1,4 @@
+{% load math_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -293,11 +294,11 @@
 
         <div class="stats-grid">
             <div class="stat-card">
-                <h3>{{ stats[0] if stats else 0 }}</h3>
+                <h3>{% if stats %}{{ stats.0 }}{% else %}0{% endif %}</h3>
                 <p>Total Pengguna</p>
             </div>
             <div class="stat-card">
-                <h3>{{ stats[1] if stats else 0 }}</h3>
+                <h3>{% if stats %}{{ stats.1 }}{% else %}0{% endif %}</h3>
                 <p>Total Interaksi</p>
             </div>
             <div class="stat-card">
@@ -305,9 +306,9 @@
                 <p>Jenis Command</p>
             </div>
             <div class="stat-card">
-                <h3>{{ (stats[1] / stats[0])|round(1) if stats and stats[0] > 0 else 0 }}</h3>
+                <h3>{% if stats and stats.0 > 0 %}{{ stats.1|div:stats.0|floatformat:1 }}{% else %}0{% endif %}</h3>
                 <p>Rata-rata per User</p>
-            </div>
+            </div></div>
         </div>
 
         <div class="two-column">
@@ -371,7 +372,7 @@
                                 </span>
                             </td>
                             <td>{{ count }}</td>
-                            <td>{{ "%.1f"|format((count / stats[1]) * 100) if stats and stats[1] > 0 else 0 }}%</td>
+                            <td>{% if stats and stats.1 > 0 %}{{ count|div:stats.1|mul:100|floatformat:1 }}{% else %}0{% endif %}%</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -517,8 +518,8 @@
         // Log ke console
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Bot Analytics Dashboard loaded successfully!');
-            console.log(`Total users: {{ stats[0] if stats else 0 }}`);
-            console.log(`Total interactions: {{ stats[1] if stats else 0 }}`);
+            console.log(`Total users: {% if stats %}{{ stats.0 }}{% else %}0{% endif %}`);
+            console.log(`Total interactions: {% if stats %}{{ stats.1 }}{% else %}0{% endif %}`);
         });
 
         // Tambahkan smooth scrolling
