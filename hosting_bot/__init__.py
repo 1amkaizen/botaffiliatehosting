@@ -1,2 +1,0 @@
-
-# Django hosting bot package
