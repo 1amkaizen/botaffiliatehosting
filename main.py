@@ -1,9 +1,6 @@
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from data_hosting import HOSTING_OPTIONS
-import json
-import os
-from dotenv import load_dotenv
 
 # Global dict to track user state
 user_state = {}
@@ -78,8 +75,6 @@ if __name__ == "__main__":
     load_dotenv()
 
     TOKEN = os.getenv("BOT_TOKEN")
-    if not TOKEN:
-        raise ValueError("BOT_TOKEN tidak ditemukan. Pastikan sudah diset di .env atau environment variables.")
 
     app = ApplicationBuilder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
