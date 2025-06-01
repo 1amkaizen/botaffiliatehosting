@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,11 +268,11 @@
             .two-column {
                 grid-template-columns: 1fr;
             }
-            
+
             .stats-grid {
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
-            
+
             .container {
                 padding: 15px;
             }
@@ -325,7 +324,7 @@
                             {% endif %}
                         {% endif %}
                     {% endfor %}
-                    
+
                     {% for user_id, user_data in user_dict.items() %}
                     <div class="user-card">
                         <div class="user-info">
@@ -413,7 +412,7 @@
 
         <div class="section">
             <h2>⚙️ Setup Bot Telegram - Panduan Lengkap</h2>
-            
+
             <!-- Bot Token Setup -->
             <div class="webhook-info" style="margin-bottom: 20px;">
                 <h3 style="margin-bottom: 15px; color: #2d3436;">🤖 1. Setup BOT_TOKEN</h3>
@@ -443,7 +442,7 @@
                     <li>Di tab <strong>"Secrets"</strong> → <strong>"+ New Secret"</strong></li>
                     <li>Key: <code>WEBHOOK_URL</code> | Value: <code>https://[repl-name].[username].repl.co/webhook</code></li>
                 </ol>
-                
+
                 <p><strong>Contoh URL Webhook untuk platform lain:</strong></p>
                 <ul style="margin-left: 20px; line-height: 1.6;">
                     <li><strong>Vercel:</strong> <code>https://your-project.vercel.app/webhook</code></li>
@@ -505,7 +504,7 @@
         // Tambahkan indikator refresh countdown
         let countdown = 30;
         const refreshInfo = document.querySelector('.refresh-info');
-        
+
         setInterval(() => {
             countdown--;
             if (countdown > 0) {
